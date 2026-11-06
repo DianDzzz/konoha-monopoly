@@ -4,9 +4,13 @@
 import express from 'express';
 import http from 'http';
 import os from 'os';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
 import { RoomManager } from './room.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function getLocalIpAddresses() {
   const ips = [];
@@ -28,7 +32,9 @@ async function startServer() {
   // Inisialisasi Socket.io Server Otoritatif
   const io = new Server(httpServer, {
     cors: {
-      origin: '*',
+      origin: process.env.CLIENT_ORIGIN
+        ? process.env.CLIENT_ORIGIN.split(',').map((origin) => origin.trim())
+        : '*',
       methods: ['GET', 'POST']
     }
   });
@@ -43,13 +49,21 @@ async function startServer() {
     });
   });
 
-  // Integrasikan Vite dalam mode middleware agar klien & Socket.io berjalan di port yang sama
-  const vite = await createViteServer({
-    server: { middlewareMode: true, hmr: { server: httpServer } },
-    appType: 'spa'
-  });
-
-  app.use(vite.middlewares);
+  if (process.env.NODE_ENV === 'production') {
+    const distPath = path.resolve(__dirname, '../dist');
+    app.use(express.static(distPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
+    // Integrasikan Vite dalam mode middleware agar klien & Socket.io berjalan
+    // dalam satu proses saat pengembangan lokal.
+    const vite = await createViteServer({
+      server: { middlewareMode: true, hmr: { server: httpServer } },
+      appType: 'spa'
+    });
+    app.use(vite.middlewares);
+  }
 
   const PORT = process.env.PORT || 5178;
   const HOST = '0.0.0.0';

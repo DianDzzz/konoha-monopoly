@@ -21,7 +21,10 @@ export class NetworkClient {
   connect() {
     if (this.socket) return;
 
-    this.socket = io({
+    // GitHub Pages is static, so production builds point at the separately
+    // deployed Socket.io server through VITE_SOCKET_URL.
+    const socketUrl = import.meta.env.VITE_SOCKET_URL?.trim() || undefined;
+    this.socket = io(socketUrl, {
       reconnection: true,
       reconnectionDelay: 1000
     });

@@ -83,3 +83,26 @@ npm run dev
   ```bash
   cloudflared tunnel --url http://localhost:5178
   ```
+
+## 🌍 Deploy ke GitHub Pages + Multiplayer
+
+GitHub Pages hanya menjalankan file frontend statis. `server/index.js` tetap
+wajib dijalankan pada layanan Node.js publik agar room dan Socket.io dapat
+diakses teman-teman. Contoh yang sederhana adalah Render:
+
+1. Buat **Web Service** baru dari repository ini di Render.
+2. Gunakan `npm ci && npm run build` sebagai **Build Command** dan
+   `npm start` sebagai **Start Command**.
+3. Setelah mendapat URL server, misalnya
+   `https://konoha-monopoly-server.onrender.com`, tambahkan repository secret
+   `VITE_SOCKET_URL` dengan URL tersebut.
+4. Pada pengaturan GitHub repository, aktifkan Pages dengan source **GitHub
+   Actions**. Workflow di `.github/workflows/deploy-pages.yml` akan membangun
+   frontend dengan base path repository dan menerbitkannya.
+5. Atur environment variable `CLIENT_ORIGIN` pada server ke URL Pages, misalnya
+   `https://diandzzz.github.io/konoha-monopoly`, lalu redeploy server.
+
+Untuk pengujian lokal, jangan isi `VITE_SOCKET_URL`; klien akan memakai origin
+yang sama dengan server lokal. Deployment frontend saja tanpa server publik
+tetap dapat membuka tampilan permainan, tetapi mode room multiplayer tidak akan
+terhubung.
